@@ -28,6 +28,9 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("newsletters/selfh-st/weekly", workflow)
         self.assertIn("git add newsletters/selfh-st/weekly", workflow)
         self.assertIn("git push", workflow)
+        self.assertIsNone(
+            re.search(r"(?m)^Archive Self-Host Weekly as Markdown$", workflow)
+        )
 
 
 if __name__ == "__main__":

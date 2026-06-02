@@ -124,16 +124,16 @@ jobs:
 
           commit_message=$(mktemp)
           cat > "$commit_message" <<'EOF'
-Archive Self-Host Weekly as Markdown
+          Archive Self-Host Weekly as Markdown
 
-Constraint: External GitHub-hosted runner must fetch selfh.st over public internet
-Rejected: Translation and downstream publishing | project scope is Markdown archiving only
-Confidence: high
-Scope-risk: narrow
-Directive: Keep workflow limited to RSS/article fetch, Markdown generation, and archive commit.
-Tested: python3 -m unittest discover -s tests; selfh.st RSS network check
-Not-tested: GitHub scheduled run in the remote repository
-EOF
+          Constraint: External GitHub-hosted runner must fetch selfh.st over public internet
+          Rejected: Translation and downstream publishing | project scope is Markdown archiving only
+          Confidence: high
+          Scope-risk: narrow
+          Directive: Keep workflow limited to RSS/article fetch, Markdown generation, and archive commit.
+          Tested: python3 -m unittest discover -s tests; selfh.st RSS network check
+          Not-tested: GitHub scheduled run in the remote repository
+          EOF
 
           git commit -F "$commit_message"
 
