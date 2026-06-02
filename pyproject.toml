@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "selfhst-weekly-md"
+version = "0.1.0"
+description = "Fetch selfh.st weekly RSS items and save article Markdown."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+selfhst-weekly-md = "selfhst_weekly_md.archive:main"
+
+[tool.setuptools.packages.find]
+include = ["selfhst_weekly_md*"]

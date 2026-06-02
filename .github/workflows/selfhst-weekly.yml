@@ -1,0 +1,128 @@
+name: Archive Self-Host Weekly Markdown
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "30 13 * * 5"
+  workflow_dispatch:
+    inputs:
+      newsletter_url:
+        description: "Specific selfh.st weekly URL. Leave empty to archive RSS-visible issues."
+        required: false
+        type: string
+      archive_year:
+        description: "Archive only RSS-visible issues from this year. Leave empty to archive every visible year."
+        required: false
+        default: "2026"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: selfhst-weekly-md-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    env:
+      NEWSLETTER_URL: ${{ github.event.inputs.newsletter_url }}
+      ARCHIVE_YEAR: ${{ github.event.inputs.archive_year }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Verify selfh.st feed network access
+        run: |
+          python3 - <<'PY'
+          from urllib.request import Request, urlopen
+
+          url = "https://selfh.st/weekly/rss/"
+          request = Request(
+              url,
+              headers={"User-Agent": "selfhst-weekly-md/0.1 (+https://selfh.st/weekly/rss/)"},
+          )
+          with urlopen(request, timeout=30) as response:
+              status = response.status
+              prefix = response.read(256)
+
+          if status >= 400:
+              raise SystemExit(f"{url} returned HTTP {status}")
+          if b"<rss" not in prefix and b"<?xml" not in prefix:
+              raise SystemExit(f"{url} did not look like an RSS feed")
+          print(f"{url} reachable with HTTP {status}")
+          PY
+
+      - name: Run tests
+        run: python3 -m unittest discover -s tests
+
+      - name: Generate Markdown archive entries
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          archive_year="${ARCHIVE_YEAR:-2026}"
+          if [ -n "${NEWSLETTER_URL:-}" ]; then
+            python3 -m selfhst_weekly_md.archive --url "$NEWSLETTER_URL"
+          elif [ -n "$archive_year" ]; then
+            python3 -m selfhst_weekly_md.archive --all --year "$archive_year"
+          else
+            python3 -m selfhst_weekly_md.archive --all
+          fi
+
+          if [ -n "$(git status --porcelain -- newsletters/selfh-st/weekly)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Markdown archive changed."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No Markdown archive changes."
+          fi
+
+      - name: Commit generated Markdown
+        if: steps.archive.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add newsletters/selfh-st/weekly
+
+          if git diff --cached --quiet; then
+            echo "No generated Markdown changes to commit."
+            exit 0
+          fi
+
+          commit_message=$(mktemp)
+          cat > "$commit_message" <<'EOF'
+Archive Self-Host Weekly as Markdown
+
+Constraint: External GitHub-hosted runner must fetch selfh.st over public internet
+Rejected: Translation and downstream publishing | project scope is Markdown archiving only
+Confidence: high
+Scope-risk: narrow
+Directive: Keep workflow limited to RSS/article fetch, Markdown generation, and archive commit.
+Tested: python3 -m unittest discover -s tests; selfh.st RSS network check
+Not-tested: GitHub scheduled run in the remote repository
+EOF
+
+          git commit -F "$commit_message"
+
+          git push
+
+      - name: No archive changes
+        if: steps.archive.outputs.changed != 'true'
+        run: echo "No new Self-Host Weekly Markdown file found."
