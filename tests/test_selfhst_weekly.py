@@ -142,6 +142,33 @@ class SelfHostWeeklyTests(unittest.TestCase):
             self.assertIn("May 22 body.", (output_dir / "2026-05-22.md").read_text(encoding="utf-8"))
             self.assertTrue((output_dir / "README.md").exists())
 
+    def test_collect_feed_issues_returns_empty_when_year_has_no_visible_items(self):
+        feed_xml = textwrap.dedent(
+            """\
+            <rss>
+              <channel>
+                <item>
+                  <title>Self-Host Weekly (29 May 2026)</title>
+                  <link>https://selfh.st/weekly/2026-05-29/</link>
+                  <category>Self-Host Weekly</category>
+                  <pubDate>Fri, 29 May 2026 07:54:36 -0400</pubDate>
+                </item>
+              </channel>
+            </rss>
+            """
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            with patch("selfhst_weekly_md.archive.fetch_text", return_value=feed_xml):
+                paths = collect_feed_issues(output_dir=output_dir, year=2025)
+
+            self.assertEqual(paths, [])
+            self.assertIn(
+                "_No issues have been generated yet._",
+                (output_dir / "README.md").read_text(encoding="utf-8"),
+            )
+
     def test_article_parser_keeps_sections_links_and_bookmarks(self):
         article_html = textwrap.dedent(
             """\

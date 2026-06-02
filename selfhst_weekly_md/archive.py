@@ -593,10 +593,12 @@ def collect_feed_issues(
     overwrite: bool = False,
 ) -> list[Path]:
     issues = parse_feed_items(fetch_text(feed_url, user_agent=user_agent), year=year)
-    if not issues:
-        raise ValueError("No Self-Host Weekly items found in feed")
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    if not issues:
+        update_index(output_dir)
+        return []
+
     output_paths: list[Path] = []
     for issue in issues:
         output_path = output_dir / f"{issue.slug_date}.md"

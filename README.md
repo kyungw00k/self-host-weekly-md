@@ -46,6 +46,8 @@ Fetch every 2026 issue currently visible in the RSS feed:
 python3 -m selfhst_weekly_md.archive --all --year 2026
 ```
 
+If a year filter has no currently RSS-visible issues, the command succeeds and leaves the archive unchanged.
+
 Fetch a specific issue:
 
 ```bash
@@ -95,3 +97,5 @@ python3 -m unittest discover -s tests
 - Commit scope: generated issue Markdown files and the archive index
 
 The workflow first verifies that `https://selfh.st/weekly/rss/` is reachable, then runs the test suite, generates Markdown for all selected RSS entries, and commits only when the archive changed. The repository must allow `GITHUB_TOKEN` to create commits.
+
+Manual runs for years that are no longer visible in the RSS feed complete as no-op runs.
