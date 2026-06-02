@@ -25,6 +25,8 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("python3 -m selfhst_weekly_md.archive", workflow)
         self.assertIn("--all", workflow)
         self.assertIn('--year "$archive_year"', workflow)
+        self.assertNotIn("eval \"$(", workflow)
+        self.assertEqual(workflow.count("python3 - <<"), 1)
         self.assertIn("newsletters/selfh-st/weekly", workflow)
         self.assertIn("git add newsletters/selfh-st/weekly", workflow)
         self.assertIn("git push", workflow)
