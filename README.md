@@ -33,6 +33,8 @@ The Markdown body intentionally avoids generated summaries or synthetic digest s
 
 Some Self-Host Weekly issues render `Development Activity` in the browser from a separate selfh.st static JSON file. When the source article declares that activity block, this project fetches that JSON and writes it as grouped Markdown lists for Software Updates, New Software, Directory Additions, and Project Updates.
 
+Newswire bookmark cards with source thumbnails are written as Markdown tables with bounded thumbnail images.
+
 The current checked-in archive contains every 2026 Self-Host Weekly issue visible in the RSS feed at generation time.
 
 ## Local Usage

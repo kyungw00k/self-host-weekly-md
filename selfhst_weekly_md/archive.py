@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from html import escape as html_escape
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
@@ -68,6 +69,7 @@ class Bookmark:
     url: str
     description: str = ""
     authors: list[str] = field(default_factory=list)
+    thumbnail_url: str = ""
 
 
 @dataclass
@@ -77,6 +79,7 @@ class ContentItem:
     url: str = ""
     bookmark: Bookmark | None = None
     language: str = ""
+    width: int = 0
 
 
 @dataclass
@@ -149,6 +152,7 @@ class _ArticleParser(HTMLParser):
         self._bookmark_capture = ""
         self._bookmark_capture_depth = 0
         self._bookmark_parts: list[str] = []
+        self._bookmark_thumbnail_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attrs_dict = _attrs_dict(attrs)
@@ -282,8 +286,14 @@ class _ArticleParser(HTMLParser):
         src = attrs_dict.get("src", "")
         if not src or self._current_section.excluded:
             return
+        width = 64 if attrs_dict.get("id") == "nts-logo" else 0
         self._current_section.items.append(
-            ContentItem(kind="image", text=attrs_dict.get("alt", ""), url=src)
+            ContentItem(
+                kind="image",
+                text=attrs_dict.get("alt", ""),
+                url=src,
+                width=width,
+            )
         )
 
     def _append_activity_placeholder(self) -> None:
@@ -333,6 +343,12 @@ class _ArticleParser(HTMLParser):
             return
         if tag == "a" and not self._bookmark.url:
             self._bookmark.url = attrs_dict.get("href", "")
+        if (
+            tag == "img"
+            and self._bookmark_thumbnail_depth
+            and not self._bookmark.thumbnail_url
+        ):
+            self._bookmark.thumbnail_url = attrs_dict.get("src", "")
 
         field_name = ""
         if "kg-bookmark-title" in classes:
@@ -343,6 +359,11 @@ class _ArticleParser(HTMLParser):
             field_name = "author"
         elif "kg-bookmark-publisher" in classes:
             field_name = "publisher"
+
+        if "kg-bookmark-thumbnail" in classes:
+            self._bookmark_thumbnail_depth = 1
+        elif self._bookmark_thumbnail_depth and tag not in VOID_TAGS:
+            self._bookmark_thumbnail_depth += 1
 
         if tag not in VOID_TAGS:
             self._bookmark_depth += 1
@@ -369,6 +390,9 @@ class _ArticleParser(HTMLParser):
                 self._bookmark_capture = ""
                 self._bookmark_parts = []
 
+        if self._bookmark_thumbnail_depth:
+            self._bookmark_thumbnail_depth -= 1
+
         self._bookmark_depth -= 1
         if self._bookmark_depth == 0 and self._bookmark:
             if (
@@ -380,6 +404,7 @@ class _ArticleParser(HTMLParser):
                     ContentItem(kind="bookmark", bookmark=self._bookmark)
                 )
             self._bookmark = None
+            self._bookmark_thumbnail_depth = 0
 
 
 def parse_feed(feed_xml: str) -> IssueSource:
@@ -739,6 +764,10 @@ def _render_section(section: Section) -> list[str]:
         return []
     level = max(2, min(section.level, 6))
     lines = [f"{'#' * level} {section.title}", ""]
+    if _is_newswire_bookmark_table(section):
+        lines.extend(_render_bookmark_table(section.items))
+        return lines
+
     previous_kind = ""
     ordered_index = 1
     for item in section.items:
@@ -758,7 +787,7 @@ def _render_section(section: Section) -> list[str]:
         elif item.kind == "code":
             lines.extend([_render_code(item.text, item.language), ""])
         elif item.kind == "image":
-            lines.extend([f"![{item.text}]({item.url})", ""])
+            lines.extend([_render_image(item), ""])
         elif item.kind == "bookmark" and item.bookmark:
             lines.append(_render_bookmark(item.bookmark))
         elif item.kind == "subheading":
@@ -774,11 +803,70 @@ def _render_section(section: Section) -> list[str]:
 
 def _render_bookmark(bookmark: Bookmark) -> str:
     description = bookmark.description
-    metadata = ""
-    if bookmark.authors:
-        metadata = " " + "_(" + " / ".join(dict.fromkeys(bookmark.authors)) + ")_"
+    metadata = f" {_bookmark_metadata(bookmark)}" if bookmark.authors else ""
     suffix = f" - {description}" if description else ""
     return f"- [{bookmark.title}]({bookmark.url}){suffix}{metadata}"
+
+
+def _is_newswire_bookmark_table(section: Section) -> bool:
+    return (
+        section.title == "Newswire"
+        and bool(section.items)
+        and all(item.kind == "bookmark" and item.bookmark for item in section.items)
+        and any(item.bookmark and item.bookmark.thumbnail_url for item in section.items)
+    )
+
+
+def _render_bookmark_table(items: list[ContentItem]) -> list[str]:
+    lines = ["| Thumbnail | Story |", "| --- | --- |"]
+    for item in items:
+        if not item.bookmark:
+            continue
+        bookmark = item.bookmark
+        thumbnail = ""
+        if bookmark.thumbnail_url:
+            thumbnail = _render_html_image(
+                bookmark.thumbnail_url,
+                bookmark.title,
+                width=120,
+            )
+        lines.append(
+            f"| {_table_cell(thumbnail)} | {_table_cell(_render_bookmark_story(bookmark))} |"
+        )
+    lines.append("")
+    return lines
+
+
+def _render_bookmark_story(bookmark: Bookmark) -> str:
+    parts = [f"[{bookmark.title}]({bookmark.url})"]
+    if bookmark.description:
+        parts.append(bookmark.description)
+    metadata = _bookmark_metadata(bookmark)
+    if metadata:
+        parts.append(metadata)
+    return "<br>".join(parts)
+
+
+def _bookmark_metadata(bookmark: Bookmark) -> str:
+    if not bookmark.authors:
+        return ""
+    return "_(" + " / ".join(dict.fromkeys(bookmark.authors)) + ")_"
+
+
+def _table_cell(value: str) -> str:
+    return value.replace("\n", "<br>").replace("|", "\\|")
+
+
+def _render_image(item: ContentItem) -> str:
+    if item.width:
+        return _render_html_image(item.url, item.text, item.width)
+    return f"![{item.text}]({item.url})"
+
+
+def _render_html_image(url: str, alt: str, width: int) -> str:
+    src = html_escape(url, quote=True)
+    escaped_alt = html_escape(alt, quote=True)
+    return f'<img src="{src}" alt="{escaped_alt}" width="{width}">'
 
 
 def _render_quote(text: str) -> str:

@@ -285,7 +285,9 @@ class SelfHostWeeklyTests(unittest.TestCase):
                         <span class="kg-bookmark-author">Example Blog</span>
                         <span class="kg-bookmark-publisher">Ada Lovelace</span>
                       </div>
-                      <img src="thumb.png" alt="">
+                      <div class="kg-bookmark-thumbnail">
+                        <img src="thumb.png" alt="">
+                      </div>
                     </a>
                   </figure>
                   <h2 id="content-spotlight">Content Spotlight</h2>
@@ -322,10 +324,12 @@ class SelfHostWeeklyTests(unittest.TestCase):
         self.assertIn("[Gitea issue](https://example.com/gitea?ref=selfh.st)", rendered)
         self.assertIn("- **Homarr** reduced memory usage.", rendered)
         self.assertIn("- **Homarr** reduced memory usage.\n\nAfter list paragraph.", rendered)
+        self.assertIn("| Thumbnail | Story |", rendered)
         self.assertIn(
-            "- [Useful homelab story](https://example.com/story?ref=selfh.st) - A short description about the story. _(Example Blog / Ada Lovelace)_",
+            '| <img src="thumb.png" alt="Useful homelab story" width="120"> | [Useful homelab story](https://example.com/story?ref=selfh.st)<br>A short description about the story.<br>_(Example Blog / Ada Lovelace)_ |',
             rendered,
         )
+        self.assertNotIn("- [Useful homelab story](https://example.com/story?ref=selfh.st)", rendered)
         self.assertIn("## Content Spotlight", rendered)
         self.assertIn("Meet **Tracearr**, a monitoring app.", rendered)
         self.assertIn(
@@ -339,6 +343,42 @@ class SelfHostWeeklyTests(unittest.TestCase):
         self.assertNotIn("Sections captured:", rendered)
         self.assertNotIn("Bookmark links captured:", rendered)
         self.assertNotIn("- Source:", rendered)
+
+    def test_article_parser_bounds_sponsor_header_icon(self):
+        article_html = textwrap.dedent(
+            """\
+            <article>
+              <div id="nts-header">
+                <span>SPONSORED BY</span>
+                <img id="nts-logo" src="https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/1panel.svg">
+              </div>
+              <div id="nts-body">
+                <b>Self-Host Weekly</b> is sponsored by
+                <a href="https://github.com/1Panel-dev/1Panel?ref=selfh.st"><strong>1Panel</strong></a>.
+              </div>
+              <h2>Weekly Highlights</h2>
+              <p>Issue body.</p>
+            </article>
+            """
+        )
+
+        rendered = build_markdown(
+            IssueSource(
+                title="Self-Host Weekly (29 May 2026)",
+                url="https://selfh.st/weekly/2026-05-29/",
+            ),
+            parse_article(article_html),
+            fetched_at=datetime(2026, 6, 2, 1, 0, 0, tzinfo=timezone.utc),
+        )
+
+        self.assertIn(
+            '<img src="https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/1panel.svg" alt="" width="64">',
+            rendered,
+        )
+        self.assertNotIn(
+            "![](https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/1panel.svg)",
+            rendered,
+        )
 
     def test_article_parser_preserves_source_structure_beyond_h2_and_bullets(self):
         article_html = textwrap.dedent(
