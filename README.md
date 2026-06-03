@@ -29,7 +29,7 @@ Each generated issue keeps article metadata in YAML frontmatter:
 - `author`
 - `image`
 
-The Markdown body intentionally avoids generated summaries or synthetic digest sections. It preserves the source title, description, headings, paragraphs, links, lists, blockquotes, code blocks, bookmark cards, images, and source sections that are visible in the article HTML.
+The Markdown body intentionally avoids generated summaries or synthetic digest sections. It preserves the source title, description, representative image, sponsor text card, headings, paragraphs, links, lists, blockquotes, code blocks, bookmark cards, images, and source sections that are visible in the article HTML.
 
 Some Self-Host Weekly issues render `Development Activity` in the browser from a separate selfh.st static JSON file. When the source article declares that activity block, this project fetches that JSON and writes it as grouped Markdown lists for Software Updates, New Software, Directory Additions, and Project Updates.
 

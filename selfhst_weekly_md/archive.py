@@ -186,6 +186,8 @@ class _ArticleParser(HTMLParser):
 
         if tag in {"h2", "h3", "h4", "h5", "h6"}:
             self._start_capture("heading", tag, heading_level=int(tag[1]))
+        elif tag == "div" and attrs_dict.get("id") == "nts-body":
+            self._start_capture("paragraph", tag)
         elif tag == "p":
             self._start_capture("paragraph", tag)
         elif tag == "li":
@@ -483,6 +485,9 @@ def build_markdown(
 
     if description:
         lines.extend([f"> {description}", ""])
+
+    if image_url:
+        lines.extend([f"![{title}]({image_url})", ""])
 
     for section in article.sections:
         lines.extend(_render_section(section))
@@ -953,6 +958,8 @@ def _language_from_classes(classes: set[str]) -> str:
 def _normalize_inline(text: str) -> str:
     normalized = " ".join(text.split())
     normalized = normalized.replace("[ ", "[").replace(" ](", "](")
+    normalized = re.sub(r"\[\*\*([^\]]+)\]\(([^)]+)\)\*\*", r"[**\1**](\2)", normalized)
+    normalized = re.sub(r"\[\*([^\]]+)\]\(([^)]+)\)\*", r"[*\1*](\2)", normalized)
     return normalized.strip()
 
 

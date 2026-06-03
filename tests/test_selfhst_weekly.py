@@ -328,6 +328,10 @@ class SelfHostWeeklyTests(unittest.TestCase):
         )
         self.assertIn("## Content Spotlight", rendered)
         self.assertIn("Meet **Tracearr**, a monitoring app.", rendered)
+        self.assertIn(
+            "![Self-Host Weekly (29 May 2026)](https://selfh.st/content/images/featured.png)",
+            rendered,
+        )
         self.assertIn("```bash\n$ echo \"!!\" > selfhost.sh\n```", rendered)
         self.assertIn("## Executive Sponsors", rendered)
         self.assertIn("Sponsor content should be preserved", rendered)
@@ -371,6 +375,40 @@ class SelfHostWeeklyTests(unittest.TestCase):
             "![Example dashboard](https://selfh.st/content/images/example.png)",
             rendered,
         )
+
+    def test_article_parser_preserves_sponsor_html_card_text(self):
+        article_html = textwrap.dedent(
+            """\
+            <article>
+              <div id="nts-body">
+                <b>Self-Host Weekly</b> is sponsored by
+                <a href="https://github.com/1Panel-dev/1Panel?ref=selfh.st"><strong>1Panel</strong></a>,
+                a modern, open source VPS control panel.
+                <a href="https://github.com/1Panel-dev/1Panel?ref=selfh.st"><strong>Deploy local LLMs</strong></a>
+                from one clean dashboard.
+                <a href="https://www.pikapods.com/"><strong>Try it today</a></strong>.
+              </div>
+              <h2>Weekly Highlights</h2>
+              <p>Issue body.</p>
+            </article>
+            """
+        )
+
+        rendered = build_markdown(
+            IssueSource(
+                title="Self-Host Weekly (29 May 2026)",
+                url="https://selfh.st/weekly/2026-05-29/",
+            ),
+            parse_article(article_html),
+            fetched_at=datetime(2026, 6, 2, 1, 0, 0, tzinfo=timezone.utc),
+        )
+
+        self.assertIn(
+            "**Self-Host Weekly** is sponsored by [**1Panel**](https://github.com/1Panel-dev/1Panel?ref=selfh.st), a modern, open source VPS control panel. [**Deploy local LLMs**](https://github.com/1Panel-dev/1Panel?ref=selfh.st) from one clean dashboard.",
+            rendered,
+        )
+        self.assertIn("[**Try it today**](https://www.pikapods.com/).", rendered)
+        self.assertIn("## Weekly Highlights", rendered)
 
     def test_update_index_sorts_generated_issues_newest_first(self):
         with TemporaryDirectory() as temp_dir:
