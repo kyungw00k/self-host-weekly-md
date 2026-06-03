@@ -35,6 +35,12 @@ VOID_TAGS = {
     "track",
     "wbr",
 }
+ACTIVITY_GROUPS = {
+    1: "Software Updates",
+    2: "New Software",
+    3: "Directory Additions",
+    4: "Project Updates",
+}
 
 
 @dataclass(frozen=True)
@@ -88,6 +94,7 @@ class ParsedArticle:
     author: str = ""
     published_at: datetime | None = None
     image_url: str | None = None
+    activity_url: str = ""
     sections: list[Section] = field(default_factory=list)
 
 
@@ -160,6 +167,10 @@ class _ArticleParser(HTMLParser):
             return
         if _is_skip_container(attrs_dict, classes):
             self._skip_depth = 1
+            return
+
+        if tag == "div" and attrs_dict.get("id") == "activity-container":
+            self._append_activity_placeholder()
             return
 
         if self._bookmark_depth:
@@ -272,6 +283,13 @@ class _ArticleParser(HTMLParser):
         self._current_section.items.append(
             ContentItem(kind="image", text=attrs_dict.get("alt", ""), url=src)
         )
+
+    def _append_activity_placeholder(self) -> None:
+        if self._current_section.title == "Development Activity":
+            return
+        section = Section("Development Activity")
+        self.sections.append(section)
+        self._current_section = section
 
     def _handle_inline_start(
         self, tag: str, attrs_dict: dict[str, str], classes: set[str]
@@ -421,6 +439,7 @@ def parse_article(html: str) -> ParsedArticle:
         author=meta.get("author") or meta.get("twitter:data1") or "",
         published_at=_parse_iso_datetime(meta.get("article:published_time", "")),
         image_url=meta.get("og:image") or meta.get("twitter:image"),
+        activity_url=_activity_url(meta, sections),
         sections=sections,
     )
 
@@ -577,10 +596,12 @@ def collect_issue(
             return existing_path
         article_html = fetch_text(url, user_agent=user_agent)
         article = parse_article(article_html)
+        hydrate_activity(article, user_agent=user_agent)
         issue = issue_from_article(url, article)
     else:
         issue = parse_feed(fetch_text(feed_url, user_agent=user_agent))
         article = parse_article(fetch_text(issue.url, user_agent=user_agent))
+        hydrate_activity(article, user_agent=user_agent)
     return write_issue(output_dir, issue, article, fetched_at=fetched_at, overwrite=overwrite)
 
 
@@ -606,6 +627,7 @@ def collect_feed_issues(
             output_paths.append(output_path)
             continue
         article = parse_article(fetch_text(issue.url, user_agent=user_agent))
+        hydrate_activity(article, user_agent=user_agent)
         output_paths.append(
             write_issue(
                 output_dir,
@@ -621,6 +643,22 @@ def collect_feed_issues(
 
 def output_path_for_url(output_dir: Path, url: str) -> Path:
     return output_dir / f"{IssueSource(title='', url=url).slug_date}.md"
+
+
+def hydrate_activity(
+    article: ParsedArticle,
+    user_agent: str = DEFAULT_USER_AGENT,
+) -> None:
+    if not article.activity_url:
+        return
+    section = _find_section(article.sections, "Development Activity")
+    if section is None:
+        return
+
+    payload = json.loads(fetch_text(article.activity_url, user_agent=user_agent))
+    if not isinstance(payload, list):
+        raise ValueError(f"Unexpected activity payload from {article.activity_url}")
+    section.items = _activity_section_items(payload)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -718,6 +756,11 @@ def _render_section(section: Section) -> list[str]:
             lines.extend([f"![{item.text}]({item.url})", ""])
         elif item.kind == "bookmark" and item.bookmark:
             lines.append(_render_bookmark(item.bookmark))
+        elif item.kind == "subheading":
+            if lines[-1] != "":
+                lines.append("")
+            subheading_level = min(level + 1, 6)
+            lines.extend([f"{'#' * subheading_level} {item.text}", ""])
         previous_kind = item.kind
     if lines[-1] != "":
         lines.append("")
@@ -739,6 +782,120 @@ def _render_quote(text: str) -> str:
 
 def _render_code(text: str, language: str) -> str:
     return f"```{language}\n{text}\n```"
+
+
+def _activity_url(meta: dict[str, str], sections: list[Section]) -> str:
+    if _find_section(sections, "Development Activity") is None:
+        return ""
+    year = meta.get("year", "")
+    uuid = meta.get("uuid", "")
+    if not year or not uuid:
+        return ""
+    return f"https://selfh.st/static/weekly/activity/{year}/{uuid}.json"
+
+
+def _find_section(sections: list[Section], title: str) -> Section | None:
+    for section in sections:
+        if section.title == title:
+            return section
+    return None
+
+
+def _activity_section_items(rows: list[object]) -> list[ContentItem]:
+    grouped: dict[int, list[str]] = {key: [] for key in ACTIVITY_GROUPS}
+    for row in rows:
+        if not isinstance(row, list) or not row:
+            continue
+        activity_type = _activity_int(row, 0)
+        if activity_type not in grouped:
+            continue
+        rendered = _render_activity_row(activity_type, row)
+        if rendered:
+            grouped[activity_type].append(rendered)
+
+    items: list[ContentItem] = []
+    for activity_type, title in ACTIVITY_GROUPS.items():
+        bullets = grouped[activity_type]
+        if not bullets:
+            continue
+        items.append(ContentItem(kind="subheading", text=title))
+        items.extend(ContentItem(kind="bullet", text=bullet) for bullet in bullets)
+    return items
+
+
+def _render_activity_row(activity_type: int, row: list[object]) -> str:
+    project = _activity_value(row, 1)
+    project_url = _activity_value(row, 4)
+    title = _markdown_link(project, project_url)
+    metadata = _activity_metadata(row, activity_type)
+
+    if activity_type == 1:
+        version = _activity_value(row, 8)
+        version_url = _activity_value(row, 9)
+        description = _activity_value(row, 11)
+        if version:
+            title = f"{title} {_markdown_link(version, version_url)}"
+        if description:
+            title = f"{title} - {description}"
+        return f"{title}{metadata}"
+
+    if activity_type in {2, 3}:
+        description = _activity_value(row, 11)
+        if description:
+            title = f"{title} - {description}"
+        return f"{title}{metadata}"
+
+    if activity_type == 4:
+        change = _activity_value(row, 12)
+        old_value = _activity_value(row, 13)
+        new_value = _activity_value(row, 14)
+        if change and (old_value or new_value):
+            title = f"{title} - {change}: {old_value} -> {new_value}"
+        elif change:
+            title = f"{title} - {change}"
+        return f"{title}{metadata}"
+
+    return ""
+
+
+def _activity_metadata(row: list[object], activity_type: int) -> str:
+    parts = [
+        _activity_value(row, 6),
+        _activity_value(row, 5),
+    ]
+    if _activity_bool(row, 2):
+        parts.append("Editor's Pick")
+    if _activity_bool(row, 3):
+        parts.append("AI-Assisted")
+    if activity_type == 1 and _activity_bool(row, 10):
+        parts.append("Breaking Change")
+
+    values = list(dict.fromkeys(part for part in parts if part))
+    return f" _({' / '.join(values)})_" if values else ""
+
+
+def _activity_value(row: list[object], index: int) -> str:
+    if index >= len(row) or row[index] is None:
+        return ""
+    return _normalize_inline(str(row[index]))
+
+
+def _activity_int(row: list[object], index: int) -> int:
+    try:
+        return int(_activity_value(row, index))
+    except ValueError:
+        return 0
+
+
+def _activity_bool(row: list[object], index: int) -> bool:
+    value = _activity_value(row, index).lower()
+    return value in {"1", "true", "yes"}
+
+
+def _markdown_link(text: str, url: str) -> str:
+    if text and url:
+        return f"[{text}]({url})"
+    return text or url
 
 
 def _extract_article_html(html: str) -> str:

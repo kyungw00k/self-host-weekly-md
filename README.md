@@ -8,6 +8,7 @@ This project only does the following:
 
 - Reads the public selfh.st weekly RSS feed to find Self-Host Weekly issues.
 - Fetches the source article page for each selected issue.
+- Fetches selfh.st's public Development Activity JSON when an issue uses the dynamic activity block.
 - Extracts as much of the original article body as practical into Markdown.
 - Saves issue files under `newsletters/selfh-st/weekly/YYYY-MM-DD.md`.
 - Maintains `newsletters/selfh-st/weekly/README.md` as a newest-first archive index.
@@ -29,6 +30,8 @@ Each generated issue keeps article metadata in YAML frontmatter:
 - `image`
 
 The Markdown body intentionally avoids generated summaries or synthetic digest sections. It preserves the source title, description, headings, paragraphs, links, lists, blockquotes, code blocks, bookmark cards, images, and source sections that are visible in the article HTML.
+
+Some Self-Host Weekly issues render `Development Activity` in the browser from a separate selfh.st static JSON file. When the source article declares that activity block, this project fetches that JSON and writes it as grouped Markdown lists for Software Updates, New Software, Directory Additions, and Project Updates.
 
 The current checked-in archive contains every 2026 Self-Host Weekly issue visible in the RSS feed at generation time.
 

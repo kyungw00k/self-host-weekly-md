@@ -1,3 +1,4 @@
+import json
 import textwrap
 import unittest
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from selfhst_weekly_md.archive import (
     Section,
     build_markdown,
     collect_feed_issues,
+    collect_issue,
     parse_article,
     parse_feed,
     parse_feed_items,
@@ -168,6 +170,93 @@ class SelfHostWeeklyTests(unittest.TestCase):
                 "_No issues have been generated yet._",
                 (output_dir / "README.md").read_text(encoding="utf-8"),
             )
+
+    def test_collect_issue_includes_dynamic_development_activity(self):
+        article_html = textwrap.dedent(
+            """\
+            <html>
+              <head>
+                <meta property="og:title" content="Self-Host Weekly (6 March 2026)">
+                <meta name="year" content="2026">
+                <meta name="uuid" content="activity-uuid">
+              </head>
+              <body>
+                <article>
+                  <h2>Newswire</h2>
+                  <p>Before activity.</p>
+                  <div id="activity-container"></div>
+                  <h2>Feedback</h2>
+                </article>
+              </body>
+            </html>
+            """
+        )
+        activity_rows = [
+            [
+                1,
+                "BunkerM",
+                0,
+                0,
+                "https://github.com/bunkeriot/BunkerM",
+                "GitHub",
+                "MQTT",
+                "Internet of Things",
+                "v2.0.0",
+                "https://github.com/bunkeriot/BunkerM/releases/tag/v2.0.0",
+                "",
+                "Redesigned interface and hardened authentication",
+                "",
+                "",
+                "",
+            ],
+            [
+                4,
+                "Ackify",
+                0,
+                0,
+                "https://github.com/kOlapsis/ackify",
+                "GitHub",
+                "Security",
+                "Security",
+                "",
+                "",
+                "",
+                "",
+                "Repository",
+                "btouchard/ackify-ce",
+                "kOlapsis/ackify",
+            ],
+        ]
+
+        def fake_fetch(url: str, **kwargs):
+            if url == "https://selfh.st/weekly/2026-03-06/":
+                return article_html
+            if url == "https://selfh.st/static/weekly/activity/2026/activity-uuid.json":
+                return json.dumps(activity_rows)
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        with TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            with patch("selfhst_weekly_md.archive.fetch_text", side_effect=fake_fetch):
+                path = collect_issue(
+                    output_dir=output_dir,
+                    url="https://selfh.st/weekly/2026-03-06/",
+                    fetched_at=datetime(2026, 6, 2, 1, 0, 0, tzinfo=timezone.utc),
+                )
+
+            rendered = path.read_text(encoding="utf-8")
+
+        self.assertIn("## Development Activity", rendered)
+        self.assertIn("### Software Updates", rendered)
+        self.assertIn(
+            "- [BunkerM](https://github.com/bunkeriot/BunkerM) [v2.0.0](https://github.com/bunkeriot/BunkerM/releases/tag/v2.0.0) - Redesigned interface and hardened authentication _(MQTT / GitHub)_",
+            rendered,
+        )
+        self.assertIn("### Project Updates", rendered)
+        self.assertIn(
+            "- [Ackify](https://github.com/kOlapsis/ackify) - Repository: btouchard/ackify-ce -> kOlapsis/ackify _(Security / GitHub)_",
+            rendered,
+        )
 
     def test_article_parser_keeps_sections_links_and_bookmarks(self):
         article_html = textwrap.dedent(
