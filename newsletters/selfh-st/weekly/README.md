@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-06-05 - Self-Host Weekly (5 June 2026)](2026-06-05.md) - 42 million Plex users can't be wrong
 - [2026-05-29 - Self-Host Weekly (29 May 2026)](2026-05-29.md) - We've officially reached the papal stage of the AI debate
 - [2026-05-22 - Self-Host Weekly (22 May 2026)](2026-05-22.md) - 750 reasons not to get back with your (Pl)ex
 - [2026-05-15 - Self-Host Weekly (15 May 2026)](2026-05-15.md) - ♩♪♫ ♬♩ ♪♩, ♫♬♪ ♩♫
