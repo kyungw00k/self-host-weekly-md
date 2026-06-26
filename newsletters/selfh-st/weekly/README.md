@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-06-26 - Self-Host Weekly (26 June 2026)](2026-06-26.md) - We've been trying to reach you about your self-hosted identity stack
 - [2026-06-19 - Self-Host Weekly (19 June 2026)](2026-06-19.md) - Bug fixes and performance improvements
 - [2026-06-12 - Self-Host Weekly (12 June 2026)](2026-06-12.md) - An ode to what was, and what could have been
 - [2026-06-05 - Self-Host Weekly (5 June 2026)](2026-06-05.md) - 42 million Plex users can't be wrong
