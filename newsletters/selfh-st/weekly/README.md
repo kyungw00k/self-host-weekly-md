@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-07-03 - Self-Host Weekly (3 July 2026)](2026-07-03.md) - Me, my.self, and I
 - [2026-06-26 - Self-Host Weekly (26 June 2026)](2026-06-26.md) - We've been trying to reach you about your self-hosted identity stack
 - [2026-06-19 - Self-Host Weekly (19 June 2026)](2026-06-19.md) - Bug fixes and performance improvements
 - [2026-06-12 - Self-Host Weekly (12 June 2026)](2026-06-12.md) - An ode to what was, and what could have been
