@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-08-07 - Self-Host Weekly (7 August 2026)](2026-08-07.md) - I'm pickin' up good (vibe)rations
 - [2026-07-31 - Self-Host Weekly (31 July 2026)](2026-07-31.md) - Yes, but can it run Jellyfin?
 - [2026-07-24 - Self-Host Weekly (24 July 2026)](2026-07-24.md) - Jellyfin and Codeberg hurt themselves in their confusion
 - [2026-07-17 - Self-Host Weekly (17 July 2026)](2026-07-17.md) - Pop it, fork it, polka dot it 🎶
