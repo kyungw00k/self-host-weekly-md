@@ -2,6 +2,8 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-09-04 - Self-Host Weekly (4 September 2026)](2026-09-04.md) - Is "responsible use of generative AI" in the room with us right now?
+- [2026-08-28 - Self-Host Weekly (28 August 2026)](2026-08-28.md) - I'll take "things nobody asked for" for $500, Alex
 - [2026-08-21 - Self-Host Weekly (21 August 2026)](2026-08-21.md) - This is your capt(AI)n speaking
 - [2026-08-14 - Self-Host Weekly (14 August 2026)](2026-08-14.md) - Death and SSO taxes
 - [2026-08-07 - Self-Host Weekly (7 August 2026)](2026-08-07.md) - I'm pickin' up good (vibe)rations

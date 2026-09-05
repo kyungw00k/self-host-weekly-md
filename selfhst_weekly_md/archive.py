@@ -13,8 +13,7 @@ from email.utils import parsedate_to_datetime
 from html import escape as html_escape
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Iterable
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener, urlopen
 
 DEFAULT_FEED_URL = "https://selfh.st/weekly/rss/"
@@ -43,6 +42,13 @@ ACTIVITY_GROUPS = {
     4: "Project Updates",
 }
 
+ACTIVITY_JSON_BASE = "https://r2.selfh.st/weekly/activity"
+ACTIVITY_CATEGORY_TYPES = {
+    "software_updates": 1,
+    "new_software": 2,
+    "directory_additions": 3,
+    "project_updates": 4,
+}
 
 @dataclass(frozen=True)
 class IssueSource:
@@ -597,6 +603,14 @@ def fetch_text(url: str, user_agent: str = DEFAULT_USER_AGENT, timeout: int = 30
         )
 
 
+def _is_proxy_tunnel_forbidden(error: URLError) -> bool:
+    if isinstance(error, HTTPError):
+        return False
+    reason = str(getattr(error, "reason", "")).lower()
+    return "proxy" in reason or "forbidden" in reason
+
+
+
 def _fetch_text_once(
     url: str,
     user_agent: str = DEFAULT_USER_AGENT,
@@ -686,7 +700,7 @@ def hydrate_activity(
         return
 
     payload = json.loads(fetch_text(article.activity_url, user_agent=user_agent))
-    if not isinstance(payload, list):
+    if not isinstance(payload, dict):
         raise ValueError(f"Unexpected activity payload from {article.activity_url}")
     section.items = _activity_section_items(payload)
 
@@ -884,7 +898,7 @@ def _activity_url(meta: dict[str, str], sections: list[Section]) -> str:
     uuid = meta.get("uuid", "")
     if not year or not uuid:
         return ""
-    return f"https://selfh.st/static/weekly/activity/{year}/{uuid}.json"
+    return f"{ACTIVITY_JSON_BASE}/{year}/{uuid}.json"
 
 
 def _find_section(sections: list[Section], title: str) -> Section | None:
@@ -894,17 +908,56 @@ def _find_section(sections: list[Section], title: str) -> Section | None:
     return None
 
 
-def _activity_section_items(rows: list[object]) -> list[ContentItem]:
+def _activity_section_items(payload: dict) -> list[ContentItem]:
     grouped: dict[int, list[str]] = {key: [] for key in ACTIVITY_GROUPS}
-    for row in rows:
-        if not isinstance(row, list) or not row:
-            continue
+    for row in _activity_payload_rows(payload):
         activity_type = _activity_int(row, 0)
         if activity_type not in grouped:
             continue
         rendered = _render_activity_row(activity_type, row)
         if rendered:
             grouped[activity_type].append(rendered)
+
+    items: list[ContentItem] = []
+    for activity_type, title in ACTIVITY_GROUPS.items():
+        bullets = grouped[activity_type]
+        if not bullets:
+            continue
+        items.append(ContentItem(kind="subheading", text=title))
+        items.extend(ContentItem(kind="bullet", text=bullet) for bullet in bullets)
+    return items
+
+
+def _activity_payload_rows(payload: dict) -> list[list[object]]:
+    rows: list[list[object]] = []
+    for category, activity_type in ACTIVITY_CATEGORY_TYPES.items():
+        entries = payload.get(category, [])
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if isinstance(entry, dict):
+                rows.append(_activity_entry_row(activity_type, entry))
+    return rows
+
+
+def _activity_entry_row(activity_type: int, entry: dict) -> list[object]:
+    return [
+        activity_type,
+        entry.get("project", ""),
+        bool(entry.get("editors_choice")),
+        bool(entry.get("ai_assisted")),
+        entry.get("link", ""),
+        entry.get("source", ""),
+        entry.get("tag", ""),
+        entry.get("tag", ""),
+        entry.get("version", ""),
+        entry.get("version_link", ""),
+        bool(entry.get("breaking")),
+        entry.get("description", ""),
+        entry.get("change", ""),
+        entry.get("from", ""),
+        entry.get("to", ""),
+    ]
 
     items: list[ContentItem] = []
     for activity_type, title in ACTIVITY_GROUPS.items():

@@ -191,48 +191,43 @@ class SelfHostWeeklyTests(unittest.TestCase):
             </html>
             """
         )
-        activity_rows = [
-            [
-                1,
-                "BunkerM",
-                0,
-                0,
-                "https://github.com/bunkeriot/BunkerM",
-                "GitHub",
-                "MQTT",
-                "Internet of Things",
-                "v2.0.0",
-                "https://github.com/bunkeriot/BunkerM/releases/tag/v2.0.0",
-                "",
-                "Redesigned interface and hardened authentication",
-                "",
-                "",
-                "",
+        activity_payload = {
+            "software_updates": [
+                {
+                    "project": "BunkerM",
+                    "link": "https://github.com/bunkeriot/BunkerM",
+                    "tag": "MQTT",
+                    "source": "GitHub",
+                    "description": "Redesigned interface and hardened authentication",
+                    "version": "v2.0.0",
+                    "version_link": "https://github.com/bunkeriot/BunkerM/releases/tag/v2.0.0",
+                    "breaking": False,
+                    "editors_choice": False,
+                    "ai_assisted": False,
+                }
             ],
-            [
-                4,
-                "Ackify",
-                0,
-                0,
-                "https://github.com/kOlapsis/ackify",
-                "GitHub",
-                "Security",
-                "Security",
-                "",
-                "",
-                "",
-                "",
-                "Repository",
-                "btouchard/ackify-ce",
-                "kOlapsis/ackify",
+            "new_software": [],
+            "directory_additions": [],
+            "project_updates": [
+                {
+                    "project": "Ackify",
+                    "link": "https://github.com/kOlapsis/ackify",
+                    "tag": "Security",
+                    "source": "GitHub",
+                    "change": "Repository",
+                    "from": "btouchard/ackify-ce",
+                    "to": "kOlapsis/ackify",
+                    "editors_choice": False,
+                    "ai_assisted": False,
+                }
             ],
-        ]
+        }
 
         def fake_fetch(url: str, **kwargs):
             if url == "https://selfh.st/weekly/2026-03-06/":
                 return article_html
-            if url == "https://selfh.st/static/weekly/activity/2026/activity-uuid.json":
-                return json.dumps(activity_rows)
+            if url == "https://r2.selfh.st/weekly/activity/2026/activity-uuid.json":
+                return json.dumps(activity_payload)
             raise AssertionError(f"Unexpected URL: {url}")
 
         with TemporaryDirectory() as temp_dir:
