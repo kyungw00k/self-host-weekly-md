@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-09-18 - Self-Host Weekly (18 September 2026)](2026-09-18.md) - Two apps, a dev, and a pizza place
 - [2026-09-11 - Self-Host Weekly (11 September 2026)](2026-09-11.md) - These go to twelve
 - [2026-09-04 - Self-Host Weekly (4 September 2026)](2026-09-04.md) - Is "responsible use of generative AI" in the room with us right now?
 - [2026-08-28 - Self-Host Weekly (28 August 2026)](2026-08-28.md) - I'll take "things nobody asked for" for $500, Alex
