@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-09-25 - Self-Host Weekly (25 September 2026)](2026-09-25.md) - I have no RAM, and I must scream
 - [2026-09-18 - Self-Host Weekly (18 September 2026)](2026-09-18.md) - Two apps, a dev, and a pizza place
 - [2026-09-11 - Self-Host Weekly (11 September 2026)](2026-09-11.md) - These go to twelve
 - [2026-09-04 - Self-Host Weekly (4 September 2026)](2026-09-04.md) - Is "responsible use of generative AI" in the room with us right now?
