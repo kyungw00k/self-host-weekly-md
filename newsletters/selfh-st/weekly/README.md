@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-10-02 - Self-Host Weekly (2 October 2026)](2026-10-02.md) - Where we're going, we don't need Windows.
 - [2026-09-25 - Self-Host Weekly (25 September 2026)](2026-09-25.md) - I have no RAM, and I must scream
 - [2026-09-18 - Self-Host Weekly (18 September 2026)](2026-09-18.md) - Two apps, a dev, and a pizza place
 - [2026-09-11 - Self-Host Weekly (11 September 2026)](2026-09-11.md) - These go to twelve
