@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-10-09 - Self-Host Weekly (9 October 2026)](2026-10-09.md) - The Princess and the (Photo)Pea
 - [2026-10-02 - Self-Host Weekly (2 October 2026)](2026-10-02.md) - Where we're going, we don't need Windows.
 - [2026-09-25 - Self-Host Weekly (25 September 2026)](2026-09-25.md) - I have no RAM, and I must scream
 - [2026-09-18 - Self-Host Weekly (18 September 2026)](2026-09-18.md) - Two apps, a dev, and a pizza place
