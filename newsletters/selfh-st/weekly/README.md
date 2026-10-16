@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-10-16 - Self-Host Weekly (16 October 2026)](2026-10-16.md) - You either die open source, or live long enough to see yourself become open core
 - [2026-10-09 - Self-Host Weekly (9 October 2026)](2026-10-09.md) - The Princess and the (Photo)Pea
 - [2026-10-02 - Self-Host Weekly (2 October 2026)](2026-10-02.md) - Where we're going, we don't need Windows.
 - [2026-09-25 - Self-Host Weekly (25 September 2026)](2026-09-25.md) - I have no RAM, and I must scream
