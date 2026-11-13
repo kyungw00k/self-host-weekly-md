@@ -2,6 +2,7 @@
 
 Generated Markdown archive from the public selfh.st weekly RSS feed.
 
+- [2026-11-13 - Self-Host Weekly (13 November 2026)](2026-11-13.md) - Numbers don't lie (usually)
 - [2026-11-06 - Self-Host Weekly (6 November 2026)](2026-11-06.md) - 10 Things I Love About Immich
 - [2026-10-30 - Self-Host Weekly (30 October 2026)](2026-10-30.md) - Trick-or-tokens
 - [2026-10-23 - Self-Host Weekly (23 October 2026)](2026-10-23.md) - Shell shocked
